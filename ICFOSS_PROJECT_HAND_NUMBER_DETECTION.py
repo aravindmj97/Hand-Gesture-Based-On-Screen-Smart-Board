@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import mediapipe as mp
 import time
+import os
 
 # Setting the video feed size
 wCam, hCam = 640, 480
@@ -17,17 +18,28 @@ maxHands = 2
 detectionCon = 0.5
 trackCon = 0.5
 
+# Tip point index of each finger
+tipIds = [4, 8, 12, 16, 20]
+
 # Initialize the object for calling hand prediction from mediapipe
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(mode, maxHands,detectionCon, trackCon)
 mpDraw = mp.solutions.drawing_utils
 
+# Initialize variables for editmode
+inEditMode = False
+drawList = []
+icons = []
+folderPath = "icons"
+iconList = os.listdir(folderPath)
+for iconPath in iconList:
+    image = cv2.imread(f'{folderPath}/{iconPath}')
+    icons.append(cv2.resize(image, (120, 120)))
+
 '''
 Function to process the data returned by mediapipe
-
 Parameters:
     img - Image to be processed
-
 Return:
     lmList - List of points on the palm
 '''
@@ -52,14 +64,13 @@ def findHandPoints(img, handNo=0, draw=False):
                 #     self.line.append([cx, cy])
                 mpDraw.draw_landmarks(img, myHand,
                                                mpHands.HAND_CONNECTIONS)
+
     return lmList
 
 '''
 Function to make a list with the 0's and 1's corresponding the number of fingers raised
-
 Parameters:
     fingerPoints - List of points retunred by findHandPoints()
-
 Return:
     total - List of 0's and 1's
 '''
@@ -76,10 +87,42 @@ def findTheNumberSet(fingerPoints):
             total.append(0)
     return total
 
+'''
+Function to change display and edit mode
+Parameters:
+    point - The coordinated of the index finger
+'''
+def checkIfInEditMode(point):
+    global inEditMode
+    if point[1] < 120 and point[2] < 120:
+        inEditMode = True
+
+'''
+Function to save the drawn points
+Parameters:
+    point - The coordinated of the index finger
+'''
+def markPoints(point):
+    drawList.append([point[1], point[2]])
+
+'''
+Function to clear the drawn points
+'''
+def clearPoints(point):
+    global drawList, inEditMode
+    if point[2] > 120 and point[2] < 240 and point[1] < 120:
+        drawList = []
+        inEditMode = False
+
+'''
+Function to draw all the marked points
+'''
+def drawAllPoints(img):
+    for point in drawList:
+        cv2.circle(img, (point[0], point[1]), 15, (255, 0, 255), cv2.FILLED)
 
 # pTime = 0
 # cTime = 0
-tipIds = [4, 8, 12, 16, 20]
 
 
 '''
@@ -93,6 +136,7 @@ def main():
         # fps = 1 / (cTime - pTime)
         # pTime = cTime
         img = cv2.flip(img, 1)
+
         # Calling function for finding the hand points
         fingerPoints = findHandPoints(img)
         total = []
@@ -101,21 +145,39 @@ def main():
             # Calling function to get the number fingers that are raised
             total = findTheNumberSet(fingerPoints)
 
-            # if fingerPoints[tipIds[1]][2] < fingerPoints[tipIds[1]-2][2]:
-            #     cv2.circle(img, (fingerPoints[tipIds[1]][1], fingerPoints[tipIds[1]][2]), 15, (255, 0, 255), cv2.FILLED)
+            if fingerPoints[tipIds[1]][2] < fingerPoints[tipIds[1]-2][2]:
+                cv2.circle(img, (fingerPoints[tipIds[1]][1], fingerPoints[tipIds[1]][2]), 15, (255, 0, 255), cv2.FILLED)
 
+                # Function call to mark the points in edit mode
+                if inEditMode:
+                    markPoints(fingerPoints[tipIds[1]])
+                else:
+                    # Function call to check if going to edit mode
+                    checkIfInEditMode(fingerPoints[tipIds[1]])
+
+                #Function to clear all the drawing
+                clearPoints(fingerPoints[tipIds[1]])
+
+        # Function to draw all the points
+        drawAllPoints(img)
+        
         # The number shown in the hand
         totalCount = total.count(1)
 
         # Draw the number on the camera feed in rectangle
-        #cv2.rectangle(img, (20, 225), (170, 425), (0, 255, 0), cv2.FILLED)
-        cv2.putText(img, 'The Number', (20, 235), cv2.FONT_HERSHEY_PLAIN,
-            2, (255, 0, 0), 2)
-        cv2.putText(img, str(totalCount), (45, 375), cv2.FONT_HERSHEY_PLAIN,
-                    10, (255, 0, 0), 15)
+        cv2.putText(img, 'Number Shown', (380, 80), cv2.FONT_HERSHEY_PLAIN,
+            2, (0, 0, 0), 2)
+        cv2.putText(img, str(totalCount), (550, 150), cv2.FONT_HERSHEY_PLAIN,
+                    5, (0, 0, 0), 10)
 
         # cv2.putText(img, str(int(fps)), (10, 70), cv2.FONT_HERSHEY_PLAIN, 3,
         #             (255, 0, 255), 3)
+
+        # Drawing the Edit and Erase icons
+        h1, w1, c1 = icons[1].shape
+        img[0:h1, 0:w1] = icons[1]
+        h2, w2, c2 = icons[0].shape
+        img[h1:h1+h2, 0:w2] = icons[0]
 
         cv2.imshow("Feed", img)
         cv2.waitKey(1)

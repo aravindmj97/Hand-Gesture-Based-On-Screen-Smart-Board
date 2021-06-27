@@ -101,21 +101,24 @@ def main():
             # Calling function to get the number fingers that are raised
             total = findTheNumberSet(fingerPoints)
 
-            if fingerPoints[tipIds[1]][2] < fingerPoints[tipIds[1]-2][2]:
-                cv2.circle(img, (fingerPoints[tipIds[1]][1], fingerPoints[tipIds[1]][2]), 15, (255, 0, 255), cv2.FILLED)
+            # if fingerPoints[tipIds[1]][2] < fingerPoints[tipIds[1]-2][2]:
+            #     cv2.circle(img, (fingerPoints[tipIds[1]][1], fingerPoints[tipIds[1]][2]), 15, (255, 0, 255), cv2.FILLED)
 
         # The number shown in the hand
         totalCount = total.count(1)
 
         # Draw the number on the camera feed in rectangle
-        cv2.rectangle(img, (20, 225), (170, 425), (0, 255, 0), cv2.FILLED)
-        cv2.putText(img, 'The Number', (95, 325), cv2.FONT_HERSHEY_PLAIN,
-            10, (255, 0, 0), 15)
+        #cv2.rectangle(img, (20, 225), (170, 425), (0, 255, 0), cv2.FILLED)
+        cv2.putText(img, 'The Number', (20, 235), cv2.FONT_HERSHEY_PLAIN,
+            2, (255, 0, 0), 2)
         cv2.putText(img, str(totalCount), (45, 375), cv2.FONT_HERSHEY_PLAIN,
-                    10, (255, 0, 0), 25)
+                    10, (255, 0, 0), 15)
 
         # cv2.putText(img, str(int(fps)), (10, 70), cv2.FONT_HERSHEY_PLAIN, 3,
         #             (255, 0, 255), 3)
 
         cv2.imshow("Feed", img)
         cv2.waitKey(1)
+
+if __name__ == "__main__":
+    main()

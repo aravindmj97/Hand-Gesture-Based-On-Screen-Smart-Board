@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 import mediapipe as mp
-import time
 import os
 
 # Setting the video feed size
@@ -51,18 +50,13 @@ def findHandPoints(img, handNo=0, draw=False):
     lmList = []
     
     if results.multi_hand_landmarks:
-        # print(results.multi_handedness)
-        myHand = results.multi_hand_landmarks[handNo]
-        for id, lm in enumerate(myHand.landmark):
-            # print(id, lm)
+        handCoor = results.multi_hand_landmarks[handNo]
+        for id, lm in enumerate(handCoor.landmark):
             h, w, c = img.shape
             cx, cy = int(lm.x * w), int(lm.y * h)
-            # print(id, cx, cy)
             lmList.append([id, cx, cy])
             if draw:
-                # if id == 8 and (lmList[8][2] < lmList[6][2]) :
-                #     self.line.append([cx, cy])
-                mpDraw.draw_landmarks(img, myHand,
+                mpDraw.draw_landmarks(img, handCoor,
                                                mpHands.HAND_CONNECTIONS)
 
     return lmList
@@ -121,10 +115,6 @@ def drawAllPoints(img):
     for point in drawList:
         cv2.circle(img, (point[0], point[1]), 15, (255, 0, 255), cv2.FILLED)
 
-# pTime = 0
-# cTime = 0
-
-
 '''
 Driver function
 '''
@@ -132,9 +122,6 @@ def main():
 
     while True:
         success, img = cap.read()
-        # cTime = time.time()
-        # fps = 1 / (cTime - pTime)
-        # pTime = cTime
         img = cv2.flip(img, 1)
 
         # Calling function for finding the hand points
@@ -146,7 +133,6 @@ def main():
             total = findTheNumberSet(fingerPoints)
 
             if fingerPoints[tipIds[1]][2] < fingerPoints[tipIds[1]-2][2]:
-                cv2.circle(img, (fingerPoints[tipIds[1]][1], fingerPoints[tipIds[1]][2]), 15, (255, 0, 255), cv2.FILLED)
 
                 # Function call to mark the points in edit mode
                 if inEditMode:
@@ -169,9 +155,6 @@ def main():
             2, (0, 0, 0), 2)
         cv2.putText(img, str(totalCount), (550, 150), cv2.FONT_HERSHEY_PLAIN,
                     5, (0, 0, 0), 10)
-
-        # cv2.putText(img, str(int(fps)), (10, 70), cv2.FONT_HERSHEY_PLAIN, 3,
-        #             (255, 0, 255), 3)
 
         # Drawing the Edit and Erase icons
         h1, w1, c1 = icons[1].shape

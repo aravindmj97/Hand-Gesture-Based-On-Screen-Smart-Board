@@ -20,6 +20,9 @@ trackCon = 0.5
 # Tip point index of each finger
 tipIds = [4, 8, 12, 16, 20]
 
+# Left or Right Indicator
+isLeft = 0
+
 # Initialize the object for calling hand prediction from mediapipe
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(mode, maxHands,detectionCon, trackCon)
@@ -44,12 +47,15 @@ Return:
 '''
 def findHandPoints(img, handNo=0, draw=False):
 
+    global isLeft
+
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(imgRGB)
 
     lmList = []
     
     if results.multi_hand_landmarks:
+        isLeft = results.multi_handedness[0].ListFields()[0][1][0].index
         handCoor = results.multi_hand_landmarks[handNo]
         for id, lm in enumerate(handCoor.landmark):
             h, w, c = img.shape
@@ -70,7 +76,9 @@ Return:
 '''
 def findTheNumberSet(fingerPoints):
     total = []
-    if fingerPoints[tipIds[0]][1] < fingerPoints[tipIds[0]-1][1]:
+    if fingerPoints[tipIds[0]][1] < fingerPoints[tipIds[0]-1][1] and isLeft == 1:
+        total.append(1)
+    elif fingerPoints[tipIds[0]][1] > fingerPoints[tipIds[0]-1][1] and isLeft == 0:
         total.append(1)
     else:
         total.append(0)
